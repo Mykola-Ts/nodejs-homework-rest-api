@@ -1,6 +1,6 @@
 import { Contact } from "../models/Contact.js";
 import { HttpError } from "../helpers/index.js";
-import { ctrlWrapper } from "../decorators/index.js";
+import { controllerWrapper } from "../decorators/index.js";
 
 const getAll = async (req, res) => {
   const contacts = await Contact.find();
@@ -47,9 +47,9 @@ const updateById = async (req, res) => {
 };
 
 export default {
-  getAll: ctrlWrapper(getAll),
-  getById: ctrlWrapper(getById),
-  add: ctrlWrapper(add),
-  deleteById: ctrlWrapper(deleteById),
-  updateById: ctrlWrapper(updateById),
+  getAll: controllerWrapper(getAll),
+  getById: controllerWrapper(getById),
+  add: controllerWrapper(add),
+  deleteById: controllerWrapper(deleteById),
+  updateById: controllerWrapper(updateById),
 };

@@ -1,2 +1,2 @@
-export { ctrlWrapper } from "./ctrlWrapper.js";
+export { controllerWrapper } from "./controllerWrapper.js";
 export { validateBody } from "./validateBody.js";

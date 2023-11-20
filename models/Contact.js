@@ -5,14 +5,14 @@ const contactSchema = new Schema(
   {
     name: {
       type: String,
-      require: [true, "Set name for contact"],
+      required: [true, "Set name for contact"],
     },
     email: {
       type: String,
     },
     phone: {
       type: String,
-      require: [true, "Set phone for contact"],
+      required: [true, "Set phone for contact"],
     },
     favorite: { type: Boolean, default: false },
   },
