@@ -15,6 +15,11 @@ const contactSchema = new Schema(
       required: [true, "Set phone for contact"],
     },
     favorite: { type: Boolean, default: false },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+      required: true,
+    },
   },
   {
     versionKey: false,

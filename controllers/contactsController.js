@@ -3,13 +3,27 @@ import { HttpError } from "../helpers/index.js";
 import { controllerWrapper } from "../decorators/index.js";
 
 const getAll = async (req, res) => {
-  const contacts = await Contact.find();
+  const { _id: owner } = req.user;
+  const { page = 1, limit = 20, ...filterParams } = req.query;
+  const skip = (page - 1) * limit;
 
-  res.json(contacts);
+  const filter = { owner, ...filterParams };
+
+  const contacts = await Contact.find(filter, "-createdAt -updatedAt", {
+    skip,
+    limit,
+  }).populate("owner", "user.email");
+
+  const total = await Contact.countDocuments(filter);
+
+  res.json({ contacts, total, page, perPage: limit });
 };
 
 const getById = async (req, res) => {
-  const contact = await Contact.findById(req.params.id);
+  const { id } = req.params;
+  const { _id: owner } = req.user;
+
+  const contact = await Contact.findOne({ _id: id, owner });
 
   if (!contact) {
     throw HttpError(404, "Not found");
@@ -19,13 +33,18 @@ const getById = async (req, res) => {
 };
 
 const add = async (req, res) => {
-  const newContact = await Contact.create(req.body);
+  const { _id: owner } = req.user;
+
+  const newContact = await Contact.create({ ...req.body, owner });
 
   res.status(201).json(newContact);
 };
 
 const deleteById = async (req, res) => {
-  const contact = await Contact.findByIdAndDelete(req.params.id);
+  const { id } = req.params;
+  const { _id: owner } = req.user;
+
+  const contact = await Contact.findOneAndDelete({ _id: id, owner });
 
   if (!contact) {
     throw HttpError(404, "Not found");
@@ -36,8 +55,12 @@ const deleteById = async (req, res) => {
 
 const updateById = async (req, res) => {
   const { params, body } = req;
+  const { _id: owner } = req.user;
 
-  const contact = await Contact.findByIdAndUpdate(params.id, body);
+  const contact = await Contact.findOneAndUpdate(
+    { _id: params.id, owner },
+    body
+  );
 
   if (!contact) {
     throw HttpError(404, "Not found");
