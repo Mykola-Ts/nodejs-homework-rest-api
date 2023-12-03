@@ -5,7 +5,7 @@ import {
   userSignupSchema,
 } from "../../schmes/authSchemes.js";
 import { validateBody } from "../../decorators/index.js";
-import { authenticate, isEmptyBody } from "../../middlewares/index.js";
+import { authenticate, isEmptyBody, upload } from "../../middlewares/index.js";
 
 const authRouter = express.Router({});
 
@@ -32,6 +32,13 @@ authRouter.patch(
   authenticate,
   isEmptyBody,
   authController.updateSubscription
+);
+
+authRouter.patch(
+  "/avatars",
+  authenticate,
+  upload.single("avatarURL"),
+  authController.updateAvatar
 );
 
 export default authRouter;

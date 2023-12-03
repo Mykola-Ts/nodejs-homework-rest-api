@@ -1,5 +1,9 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import fs from "fs/promises";
+import path from "path";
+import Jimp from "jimp";
+import gravatar from "gravatar";
 import { User } from "../models/User.js";
 import { controllerWrapper } from "../decorators/index.js";
 import { HttpError } from "../helpers/index.js";
@@ -17,14 +21,17 @@ const register = async (req, res) => {
 
   const hashPassword = await bcrypt.hash(password, 10);
 
+  const avatarURL = gravatar.url(email);
+
   const newUser = await User.create({
-    user: { ...req.body, password: hashPassword },
+    user: { ...req.body, password: hashPassword, avatarURL },
   });
 
   res.status(201).json({
     user: {
       email: newUser.user.email,
       subscription: newUser.user.subscription,
+      avatarURL,
     },
   });
 };
@@ -86,10 +93,35 @@ const updateSubscription = async (req, res) => {
   res.json(user);
 };
 
+const updateAvatar = async (req, res) => {
+  const { _id } = req.user;
+  const { path: oldPath, filename } = req.file;
+  const avatarsPath = path.resolve("public", "avatars");
+
+  await Jimp.read(oldPath)
+    .then((file) => {
+      return file.resize(250, 250).write(filename).write(oldPath);
+    })
+    .catch((error) => console.log(error.message));
+
+  const newPath = path.join(avatarsPath, filename);
+
+  await fs.rename(oldPath, newPath);
+
+  const avatarURL = path.join("avatars", filename);
+
+  await User.findByIdAndUpdate(_id, { "user.avatarURL": avatarURL });
+
+  res.json({
+    avatarURL,
+  });
+};
+
 export default {
   register: controllerWrapper(register),
   login: controllerWrapper(login),
   getCurrent: controllerWrapper(getCurrent),
   logout: controllerWrapper(logout),
   updateSubscription: controllerWrapper(updateSubscription),
+  updateAvatar: controllerWrapper(updateAvatar),
 };
