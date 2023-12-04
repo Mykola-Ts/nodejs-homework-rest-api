@@ -13,7 +13,7 @@ const { JWT_SECRET } = process.env;
 const register = async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ "user.email": email });
+  const user = await User.findOne({ email });
 
   if (user) {
     throw HttpError(409, "Email in use");
@@ -24,13 +24,15 @@ const register = async (req, res) => {
   const avatarURL = gravatar.url(email);
 
   const newUser = await User.create({
-    user: { ...req.body, password: hashPassword, avatarURL },
+    ...req.body,
+    password: hashPassword,
+    avatarURL,
   });
 
   res.status(201).json({
     user: {
-      email: newUser.user.email,
-      subscription: newUser.user.subscription,
+      email: newUser.email,
+      subscription: newUser.subscription,
       avatarURL,
     },
   });
@@ -39,13 +41,13 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ "user.email": email });
+  const user = await User.findOne({ email });
 
   if (!user) {
     throw HttpError(401, "Email or password is wrong");
   }
 
-  const passwordCompare = await bcrypt.compare(password, user.user.password);
+  const passwordCompare = await bcrypt.compare(password, user.password);
 
   if (!passwordCompare) {
     throw HttpError(401, "Email or password is wrong");
@@ -59,13 +61,13 @@ const login = async (req, res) => {
 
   await User.findByIdAndUpdate(user._id, { token });
 
-  const { subscription } = user.user;
+  const { subscription } = user;
 
   res.json({ token, user: { email, subscription } });
 };
 
 const getCurrent = (req, res) => {
-  const { email, subscription } = req.user.user;
+  const { email, subscription } = req.user;
 
   res.json({ email, subscription });
 };
@@ -83,7 +85,7 @@ const updateSubscription = async (req, res) => {
   const { subscription } = req.body;
 
   const user = await User.findOneAndUpdate(_id, {
-    "user.subscription": subscription,
+    subscription,
   });
 
   if (!user) {
@@ -94,13 +96,17 @@ const updateSubscription = async (req, res) => {
 };
 
 const updateAvatar = async (req, res) => {
+  if (!req.file) {
+    throw HttpError(400, "missing required avatarURL");
+  }
+
   const { _id } = req.user;
   const { path: oldPath, filename } = req.file;
   const avatarsPath = path.resolve("public", "avatars");
 
   await Jimp.read(oldPath)
     .then((file) => {
-      return file.resize(250, 250).write(filename).write(oldPath);
+      return file.resize(250, 250).write(oldPath);
     })
     .catch((error) => console.log(error.message));
 
@@ -110,7 +116,7 @@ const updateAvatar = async (req, res) => {
 
   const avatarURL = path.join("avatars", filename);
 
-  await User.findByIdAndUpdate(_id, { "user.avatarURL": avatarURL });
+  await User.findByIdAndUpdate(_id, { avatarURL });
 
   res.json({
     avatarURL,
