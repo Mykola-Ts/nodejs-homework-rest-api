@@ -2,6 +2,7 @@ import express from "express";
 import authController from "../../controllers/authController.js";
 import {
   userSigninSchema,
+  userVerifySchema,
   userSignupSchema,
 } from "../../schmes/authSchemes.js";
 import { validateBody } from "../../decorators/index.js";
@@ -14,6 +15,14 @@ authRouter.post(
   isEmptyBody,
   validateBody(userSignupSchema),
   authController.register
+);
+
+authRouter.get("/verify/:verificationToken", authController.verify);
+
+authRouter.post(
+  "/verify",
+  validateBody(userVerifySchema),
+  authController.resendVerify
 );
 
 authRouter.post(
